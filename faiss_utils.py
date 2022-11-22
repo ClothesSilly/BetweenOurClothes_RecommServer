@@ -11,7 +11,8 @@ class FaissUtils:
 
     def load_index(self):
         for i in range(4):
-            FaissUtils.indexes[i] = faiss.read_index(os.path.join(FaissUtils.INDEX_DIR, "index"+str(i)+".index"))
+            if os.path.isfile(os.path.join(FaissUtils.INDEX_DIR, "index"+str(i)+".index")):
+                FaissUtils.indexes[i] = faiss.read_index(os.path.join(FaissUtils.INDEX_DIR, "index"+str(i)+".index"))
 
     # index 파일 만들고 저장
     def create_index(self, categoryL, vectors, ids, dim):
@@ -30,5 +31,6 @@ class FaissUtils:
         if not FaissUtils.indexes[categoryL]:
             self.load_index()
 
+        query = np.array(query).reshape(1,-1).astype('float32')
         dists, idxs, = FaissUtils.indexes[categoryL].search(query, k)
-        return idxs[0]
+        return idxs[0].tolist()

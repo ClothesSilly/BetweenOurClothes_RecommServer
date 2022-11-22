@@ -3,12 +3,15 @@ import numpy as np
 
 
 class Encoder:
-    def __init__(self,  indexes, dims, style_dim, color_dim, material_dim):
+    def __init__(self,  indexes, dims, style_dim, color_dim, material_dim,  color_dic, material_dic, style_dic):
         self.indexes = indexes
         self.dims = dims
         self.style_dim = style_dim
         self.color_dim = color_dim
         self.material_dim = material_dim
+        self.color_dic = color_dic
+        self.material_dic = material_dic
+        self.style_dic = style_dic
 
     def encode(self, clothes_info, style, material, color):
 
@@ -20,9 +23,9 @@ class Encoder:
                 categoryL = i
                 break
 
-        style_onehot = one_hot(style, self.style_dim).numpy()
-        color_onehot = one_hot(color, self.color_dim).numpy()
-        material_onehot = one_hot(material, self.material_dim).numpy()
+        style_onehot = one_hot(self.style_dic[style], self.style_dim).numpy()
+        color_onehot = one_hot(self.color_dic[color], self.color_dim).numpy()
+        material_onehot = one_hot(self.material_dic[material], self.material_dim).numpy()
 
         vector = np.concatenate([clothes_info_onehot, style_onehot, color_onehot, material_onehot]).tolist()
         return vector, categoryL

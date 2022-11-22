@@ -53,15 +53,11 @@ class Metadata:
 class StoresData:
     MAX_LOAD = 30000
 
-    def __init__(self, app, color, material, style):
+    def __init__(self, app):
         self.app = app
 
         self.postIds = [[], [], [], []] # top, bottom, outer, dress
         self.vectors = [[],[],[],[]] # top, bottom, outer, dress
-
-        self.color = color
-        self.material = material
-        self.style = style
 
     def load_posts(self, encoder):
         rows = self.app.database.execute(text("""
@@ -76,9 +72,9 @@ class StoresData:
 
         for _, row in enumerate(rows):
             vec, categoryL = encoder.encode(row['clothes_info_id'],
-                         self.color[row['colors_name']],
-                         self.material[row['materials_name']],
-                         self.style[row['style_name']])
+                         row['colors_name'],
+                         row['materials_name'],
+                         row['style_name'])
 
             self.vectors[categoryL].append(vec)
             self.postIds[categoryL].append(row['id'])
