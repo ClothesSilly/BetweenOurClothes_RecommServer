@@ -1,8 +1,13 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from sqlalchemy import create_engine, text
+import os
 
 from load_data import Metadata, StoresData
-from encoder import encode
+from faiss_utils import FaissUtils
+from encoder import Encoder
+
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py') # DB 연동을 위한 설정 추가
@@ -12,24 +17,43 @@ database = create_engine(app.config['DB_URL'], encoding = 'utf-8')
 app.database = database
 
 # 데이터 로드
+INDEX_DIR = "index"
+
 metadata = Metadata()
+encoder = Encoder(Metadata.indexes, Metadata.dims, Metadata.style_dim, Metadata.color_dim, Metadata.material_dim)
+faiss_utils = FaissUtils()
 
-stores_data = StoresData(app, Metadata.color_name2idx, Metadata.material_name2idx, Metadata.styles_name2idx)
-stores_data.load_posts() # stores post 로드
+if not os.listdir(INDEX_DIR): # index 폴더가 비었을 경우, stores index를 만듦
+    stores_data = StoresData(app, Metadata.color_name2idx, Metadata.material_name2idx, Metadata.styles_name2idx)
+    stores_data.load_posts(encoder) # stores post 로드
+    for i in range(4):
+        if stores_data.vectors[i]:
+            faiss_utils.create_index(i, stores_data.vectors[i], stores_data.postIds[i], Metadata.dims[i]+Metadata.dim_sum)
+else:
+    faiss_utils.load_index() # index 폴더에 index가 있는 경우, index open
 
 
-'''
+# Main Server에서 호출해 추천 리스트 반환
 @app.route("/recomm", methods=["POST"])
 def recomm():
-    post_id = request.form['post_id']
     clothes_info = request.form['clothes_info']
     style = request.form['style']
     material = request.form['material']
     color = request.form['color']
 
-    vec = encode(clothes_info, style, material, color)
-    #return faiss_search(vec)
-'''
+    vec, categoryL = encoder.encode(clothes_info, style, material, color)
+    return Response(faiss_utils.search_similar_vec(categoryL, vec, 10), status=200, mimetype='application/json')
+
+
+# stores post를 새로 불러와 index 파일을 업데이트함
+@app.route("/update", methods=["PUT"])
+def update_stores_post():
+    stores_data = StoresData(app, Metadata.color_name2idx, Metadata.material_name2idx, Metadata.styles_name2idx)
+    stores_data.load_posts(encoder)  # stores post 로드
+
+    for i in range(4):
+        faiss_utils.create_index(i, stores_data.vectors[i], stores_data.postIds[i], Metadata.dims[i])
+    return Response("index 파일 업데이트", status=200,  mimetype='application/json')
 
 @app.route("/test", methods=["GET"])
 def db_connect_test():
@@ -40,13 +64,13 @@ def db_connect_test():
     result = {
             'name'      : row['name'],
             'email'     : row['email'],
-        } if row else None
+    } if row else None
 
-    return jsonify(result)
+    return Response(jsonify(result), status=200, mimetype='application/json')
 
 @app.route("/")
 def home():
-    return "추천 서버 홈"
+    return  Response("추천서버 홈", status=200, mimetype='application/json')
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", port=8080, debug=True)
+    app.run("0.0.0.0", port=8000, debug=True)

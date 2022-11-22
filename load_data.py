@@ -1,8 +1,6 @@
 import os
 import pandas as pd
 from sqlalchemy import text
-from encoder import encode
-
 
 class Metadata:
     CSV_DIR = "csv"
@@ -11,6 +9,7 @@ class Metadata:
     color_dim = -1
     material_dim = -1
     style_dim = -1
+    dim_sum = -1
 
     color_name2idx = None
     material_name2idx = None
@@ -36,13 +35,16 @@ class Metadata:
         Metadata.styles_name2idx = {row[1]: row[0] for _, row in styles.iterrows()}
 
         # dimension 계산
+        Metadata.color_dim = colors.shape[0]
+        Metadata.material_dim = materials.shape[0]
+        Metadata.style_dim = styles.shape[0]
+        Metadata.dim_sum = Metadata.color_dim  + Metadata.material_dim + Metadata.style_dim
+
         Metadata.dims[0] = top_clothes_info.shape[0]
         Metadata.dims[1]= bottom_clothes_info.shape[0]
         Metadata.dims[2] = outer_clothes_info.shape[0]
         Metadata.dims[3] = dress_clothes_info.shape[0]
-        Metadata.color_dim = colors.shape[0]
-        Metadata.material_dim = materials.shape[0]
-        Metadata.style_dim = styles.shape[0]
+
 
         Metadata.indexes[0] = Metadata.dims[0]
         for i in range(1, 4):
@@ -54,14 +56,14 @@ class StoresData:
     def __init__(self, app, color, material, style):
         self.app = app
 
-        self.faissIdx2postId = [{}, {}, {}, {}] # top, bottom, outer, dress
+        self.postIds = [[], [], [], []] # top, bottom, outer, dress
+        self.vectors = [[],[],[],[]] # top, bottom, outer, dress
 
-        self.vectors = []
         self.color = color
         self.material = material
         self.style = style
 
-    def load_posts(self):
+    def load_posts(self, encoder):
         rows = self.app.database.execute(text("""
                 select id, clothes_info_id, colors_name, materials_name, style_name
                 from stores
@@ -73,10 +75,10 @@ class StoresData:
         }).fetchall()
 
         for _, row in enumerate(rows):
-            vec, categoryL = encode(row['clothes_info_id'],
+            vec, categoryL = encoder.encode(row['clothes_info_id'],
                          self.color[row['colors_name']],
                          self.material[row['materials_name']],
                          self.style[row['style_name']])
-            self.vectors.append(vec)
-            size = len(self.faissIdx2postId[categoryL])
-            self.faissIdx2postId[categoryL][size] = row['id']
+
+            self.vectors[categoryL].append(vec)
+            self.postIds[categoryL].append(row['id'])
