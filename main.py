@@ -1,10 +1,8 @@
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine, text
-from load_data import calculate_dim
+
+from load_data import Metadata, StoresData
 from encoder import encode
-
-calculate_dim()
-
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py') # DB 연동을 위한 설정 추가
@@ -12,6 +10,13 @@ app.config.from_pyfile('config.py') # DB 연동을 위한 설정 추가
 # MySQL 연동
 database = create_engine(app.config['DB_URL'], encoding = 'utf-8')
 app.database = database
+
+# 데이터 로드
+metadata = Metadata()
+
+stores_data = StoresData(app, Metadata.color_name2idx, Metadata.material_name2idx, Metadata.styles_name2idx)
+stores_data.load_posts() # stores post 로드
+
 
 '''
 @app.route("/recomm", methods=["POST"])
@@ -32,14 +37,12 @@ def db_connect_test():
         select * from members
     """)).fetchone()
 
-    result = {								# 4)
+    result = {
             'name'      : row['name'],
             'email'     : row['email'],
         } if row else None
 
     return jsonify(result)
-
-
 
 @app.route("/")
 def home():
