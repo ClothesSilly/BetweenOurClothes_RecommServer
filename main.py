@@ -25,6 +25,7 @@ encoder = Encoder(Metadata.indexes, Metadata.dims, Metadata.style_dim, Metadata.
 faiss_utils = FaissUtils()
 
 if not os.listdir(INDEX_DIR): # index 폴더가 비었을 경우, stores index를 만듦
+    print("******************************** Creating faiss index files ********************************")
     stores_data = StoresData(app)
     stores_data.load_posts(encoder) # stores post 로드
     for i in range(4):
@@ -35,7 +36,7 @@ else:
 
 
 # Main Server에서 호출해 추천 리스트 반환
-@app.route("/recomm", methods=["POST"])
+@app.route("/api/v1/recomm", methods=["POST"])
 def recomm():
     params = request.get_json()
     clothes_info = params['clothes_info']
@@ -43,19 +44,19 @@ def recomm():
     material = params['material']
     color = params['color']
 
-    vec, categoryL = encoder.encode(clothes_info, style, material, color)
-    #return Response(jsonify(faiss_utils.search_similar_vec(categoryL, vec, 10)), status=200, mimetype='application/json')
+    vec, categoryL = encoder.encode(clothes_info, color, material, style)
     return jsonify(faiss_utils.search_similar_vec(categoryL, vec, 10))
 
 
 # stores post를 새로 불러와 index 파일을 업데이트함
-@app.route("/update", methods=["PUT"])
+@app.route("/api/v1/update", methods=["PUT"])
 def update_stores_post():
     stores_data = StoresData(app, Metadata.color_name2idx, Metadata.material_name2idx, Metadata.styles_name2idx)
     stores_data.load_posts(encoder)  # stores post 로드
 
     for i in range(4):
-        faiss_utils.create_index(i, stores_data.vectors[i], stores_data.postIds[i], Metadata.dims[i])
+        if stores_data.vectors[i]:
+            faiss_utils.create_index(i, stores_data.vectors[i], stores_data.postIds[i], Metadata.dims[i])
     return Response("index 파일 업데이트", status=200,  mimetype='application/json')
 
 @app.route("/test", methods=["GET"])

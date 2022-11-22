@@ -13,7 +13,7 @@ class Encoder:
         self.material_dic = material_dic
         self.style_dic = style_dic
 
-    def encode(self, clothes_info, style, material, color):
+    def encode(self, clothes_info, color, material, style):
 
         clothes_info_onehot = None
         categoryL = None

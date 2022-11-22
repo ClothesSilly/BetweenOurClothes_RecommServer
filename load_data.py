@@ -45,7 +45,6 @@ class Metadata:
         Metadata.dims[2] = outer_clothes_info.shape[0]
         Metadata.dims[3] = dress_clothes_info.shape[0]
 
-
         Metadata.indexes[0] = Metadata.dims[0]
         for i in range(1, 4):
             Metadata.indexes[i] = Metadata.indexes[i-1] + Metadata.dims[i]

@@ -32,5 +32,5 @@ class FaissUtils:
             self.load_index()
 
         query = np.array(query).reshape(1,-1).astype('float32')
-        dists, idxs, = FaissUtils.indexes[categoryL].search(query, k)
+        dists, idxs = FaissUtils.indexes[categoryL].search(query, k)
         return idxs[0].tolist()
