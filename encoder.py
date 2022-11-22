@@ -1,20 +1,18 @@
-from tensorflow import one_hot
-from load_data import all_dict_dic, large_category_dic
+from tensorflow import one_hot, concat
+import load_data as ld
 
-def encode(categoryL, categoryS, fit, length, color, material):
+def encode(clothes_info, style, material, color):
 
-    prefix = large_category_dic[categoryL] + "_"
-    categoryS_onehot = one_hot(all_dict_dic[prefix + "categoryS"][categoryS],
-                               len(all_dict_dic[prefix + "categoryS"][categoryS]))
-    fit_onehot = one_hot(all_dict_dic[prefix + "fit"][fit],
-                         len(all_dict_dic[prefix + "fit"][fit]))
-    length_onehot = one_hot(all_dict_dic[prefix + "length"][length],
-                         len(all_dict_dic[prefix + "length"][length]))
-    color_onehot = one_hot(all_dict_dic[prefix + "color"][color],
-                         len(all_dict_dic[prefix + "color"][color]))
-    material_onehot = one_hot(all_dict_dic[prefix + "material"][material],
-                         len(all_dict_dic[prefix + "material"][material]))
+    clothes_info_onehot = None
+    for i in range(4):
+        if clothes_info < ld.indexes[i]:
+            clothes_info_onehot = one_hot(clothes_info, ld.dims[i])
+            break
 
-    vector = categoryS_onehot + fit_onehot + length_onehot + color_onehot + material_onehot
+    style_onehot = one_hot(style, ld.style_dim)
+    color_onehot = one_hot(color, ld.color_dim)
+    material_onehot = one_hot(material, ld.material_dim)
+
+    vector = concat([clothes_info_onehot, style_onehot, color_onehot, material_onehot], axis=1)
     return vector
 

@@ -1,52 +1,55 @@
-import pickle
 import os
+import pandas as pd
 
-PICKLE_DIR = "pickle"
-all_dict_dic = {}
-large_category_dic = {"상의":"top", "하의":"bottom", "아우터":"outer", "원피스":"dress"}
-all_name_list = ["top_categoryS", "bottom_categoryS", "outer_categoryS", "dress_categoryS",
-                     "top_fit", "bottom_fit", "outer_fit", "dress_fit",
-                     "top_length", "bottom_length", "outer_length", "dress_length",
-                     "color", "material"]
+CSV_DIR = "csv"
 
-def make_dic():
-    if not os.path.exists(PICKLE_DIR):
-        os.makedirs(PICKLE_DIR)
+# index (top, bottom, outer, dress)
+indexes = [0] * 4
 
-    top_categoryS = ['탑', '블라우스', '티셔츠', '니트웨어', '셔츠', '브라탑', '후드티']
-    bottom_categoryS = ['청바지', '팬츠', '스커트', '레깅스', '조거팬츠']
-    outer_categoryS = ['코트', '재킷', '점퍼', '패딩', '베스트', '가디건', '집업']
-    dress_categoryS = ['드레스', '점프수트']
+# dim
+dims = [0] * 4 # (top, bottom, outer, dress)
+color_dim = -1
+material_dim = -1
+style_dim = -1
 
-    top_fit = ['타이트', '노멀', '루즈', '오버사이즈']
-    bottom_fit = ['스키니', '노멀', '와이드', '루즈', '벨보텀']
-    outer_fit = ['타이트', '노멀', '루즈', '오버사이즈']
-    dress_fit = ['타이트', '노멀', '루즈', '오버사이즈']
+def open_stores_post():
+    stores_post = pd.read_csv(os.path.join(CSV_DIR, "stores_post.csv"))
+    # stores_post를 열어서 4개의 카테고리 분리
+    # 4개의 카테고리에 대한 faiss index 만들기
 
-    top_length = ['크롭', '노멀', '롱']
-    bottom_length = ['미니', '니렝스', '미디', '발목', '맥시']
-    outer_length = ['크롭', '노멀', '하프', '롱', '맥시']
-    dress_length = ['미니', '니렝스', '미디', '발목', '맥시']
+    top_stores_post = stores_post[stores_post['clothes_info'] < indexes[0]]
+    bottom_stores_post = stores_post[indexes[0] <= stores_post['clothes_info'] < indexes[1]]
+    outer_stores_post = stores_post[indexes[1] <= stores_post['clothes_info'] < indexes[2]]
+    dress_stores_post = stores_post[indexes[1] <= stores_post['clothes_info'] < indexes[3]]
 
-    color = ['블랙','화이트','그레이','레드','핑크','오렌지','베이지','브라운','옐로우','그린',
-         '카키','민트','블루','네이비','스카이블루','퍼플','라벤더','와인','네온','골드']
-    material = ['퍼', '니트','무스탕'  '레이스', '스웨이드', '린넨', '앙고라' , '메시', '코듀로이' , '플리스', '시퀸/글리터' ,'네오프렌'
-'데님', '실크' ,'저지'  ,'스판덱스', '트위드'  '자카드', '벨벳'  '가죽', '비닐/PVC' , '면' ,'울/캐시미어' , '시폰', '합성섬유']
 
-    all_list = [top_categoryS, bottom_categoryS, outer_categoryS, dress_categoryS,
-                top_fit, bottom_fit, outer_fit, dress_fit,
-                top_length, bottom_length, outer_length, dress_length, color, material]
+def calculate_dim():
+    if not os.path.exists(CSV_DIR):
+        exit(-1)
 
-    for list, name in zip(all_list, all_name_list):
-        dic = list2dict(list)
-        with open(os.path.join(PICKLE_DIR, name+".pkl"), "wb") as f:
-            pickle.dump(dic, f)
+    global indexes
+    global dims
+    global color_dim
+    global material_dim
+    global style_dim
 
-def load_dic():
-    for name in all_name_list:
-        with open(os.path.join(PICKLE_DIR, name+".pkl"), "rb") as f:
-            all_dict_dic[name] = pickle.load(f)
+    clothes_info = pd.read_csv(os.path.join(CSV_DIR, "clothes_info.csv"))
+    top_clothes_info = clothes_info[clothes_info['category_l']=="상의"]
+    bottom_clothes_info = clothes_info[clothes_info['category_l'] == "하의"]
+    outer_clothes_info = clothes_info[clothes_info['category_l'] == "아우터"]
+    dress_clothes_info = clothes_info[clothes_info['category_l'] == "원피스"]
+    colors = pd.read_csv(os.path.join(CSV_DIR, "colors.csv"))
+    materials = pd.read_csv(os.path.join(CSV_DIR, "materials.csv"))
+    styles = pd.read_csv(os.path.join(CSV_DIR, "style.csv"))
 
-def list2dict(list):
-    return {value:idx for idx, value in enumerate(list)}
+    dims[0] = top_clothes_info.shape[0]
+    dims[1]= bottom_clothes_info.shape[0]
+    dims[2] = outer_clothes_info.shape[0]
+    dims[3] = dress_clothes_info.shape[0]
+    color_dim = colors.shape[0]
+    material_dim = materials.shape[0]
+    style_dim = styles.shape[0]
 
+    indexes[0] = dims[0]
+    for i in range(1, 4):
+        indexes[i] = indexes[i-1] + dims[i]
