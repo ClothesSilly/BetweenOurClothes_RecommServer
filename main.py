@@ -45,7 +45,7 @@ def recomm():
     color = params['color']
 
     vec, categoryL = encoder.encode(clothes_info, color, material, style)
-    return jsonify(faiss_utils.search_similar_vec(categoryL, vec, 10))
+    return jsonify(faiss_utils.search_similar_vec(categoryL, vec, 15))
 
 
 # stores post를 새로 불러와 index 파일을 업데이트함
@@ -58,17 +58,6 @@ def update_stores_post():
         if stores_data.vectors[i]:
             faiss_utils.create_index(i, stores_data.vectors[i], stores_data.postIds[i], Metadata.dims[i])
     return Response("index 파일 업데이트", status=200,  mimetype='application/json')
-
-@app.route("/test", methods=["GET"])
-def db_connect_test():
-    row = app.database.execute(text("""
-        select * from members
-    """)).fetchone()
-    result = {
-            'name'      : row['name'],
-            'email'     : row['email'],
-    } if row else None
-    return Response(jsonify(result), status=200, mimetype='application/json')
 
 @app.route("/")
 def home():

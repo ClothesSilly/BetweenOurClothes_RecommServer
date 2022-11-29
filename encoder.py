@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Encoder:
-    def __init__(self,  indexes, dims, style_dim, color_dim, material_dim,  color_dic, material_dic, style_dic):
+    def __init__(self,  indexes, dims, style_dim, color_dim, material_dim, color_dic, material_dic, style_dic):
         self.indexes = indexes
         self.dims = dims
         self.style_dim = style_dim
