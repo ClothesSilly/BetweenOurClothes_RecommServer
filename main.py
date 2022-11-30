@@ -51,7 +51,7 @@ def recomm():
 # stores post를 새로 불러와 index 파일을 업데이트함
 @app.route("/api/v1/update", methods=["PUT"])
 def update_stores_post():
-    stores_data = StoresData(app, Metadata.color_name2idx, Metadata.material_name2idx, Metadata.styles_name2idx)
+    stores_data = StoresData(app)
     stores_data.load_posts(encoder)  # stores post 로드
 
     for i in range(4):
