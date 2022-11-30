@@ -52,11 +52,10 @@ def recomm():
 @app.route("/api/v1/update", methods=["PUT"])
 def update_stores_post():
     stores_data = StoresData(app)
-    stores_data.load_posts(encoder)  # stores post 로드
-
+    stores_data.load_posts(encoder) # stores post 로드
     for i in range(4):
         if stores_data.vectors[i]:
-            faiss_utils.create_index(i, stores_data.vectors[i], stores_data.postIds[i], Metadata.dims[i])
+            faiss_utils.create_index(i, stores_data.vectors[i], stores_data.postIds[i], Metadata.dims[i]+Metadata.dim_sum)
     return Response("index 파일 업데이트", status=200,  mimetype='application/json')
 
 @app.route("/")
