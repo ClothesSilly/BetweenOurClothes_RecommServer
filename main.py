@@ -64,4 +64,4 @@ def home():
     return  Response("추천 서버 홈", status=200, mimetype='application/json')
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", port=8000, debug=True)
+    app.run("0.0.0.0", port=45607, debug=True)
